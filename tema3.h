@@ -22,7 +22,8 @@ namespace m1
 			void Update(float deltaTimeSeconds) override;
 			void FrameEnd() override;
 
-			void RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, Texture2D *texture1 = NULL, Texture2D *texture2 = NULL);
+			void RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, 
+								Texture2D *texture = NULL);
 
 			void OnInputUpdate(float deltaTime, int mods) override;
 			void OnKeyPress(int key, int mods) override;
@@ -35,10 +36,9 @@ namespace m1
 
         	std::unordered_map<std::string, Texture2D*> mapTextures;
 
-			float speed;
+			float speed, dir, dirAngle;
+			
 			glm::vec3 movement;
-
-			float dirAngle;
 
 			glm::vec2 modifTex;
     };
