@@ -49,8 +49,8 @@ namespace m1
 			void DefMeshes();
 			void DefTextures();
 
-			void RenderSkier();
 			void RenderSkiTrack();
+			void RenderSkier();
 			void RenderRocks(glm::vec3 point);
 			void RenderTree(glm::vec3 point);
 			void RenderPole(glm::vec3 point);

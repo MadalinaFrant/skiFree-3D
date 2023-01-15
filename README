@@ -32,16 +32,16 @@ Functiile RenderRocks, RenderTree, RenderPole si RenderGift deseneaza obstacolel
 respectiv cadourile texturate corespunzator, aplicand si rotatia in functie de 
 unghiul de inclinare prin rotationMatrix, in punctul dat. 
 
-Functia GenObjectID genereaza un numar aleator intre 0 si 3, reprezentand ID-ul 
-unui obiect astfel: 0 - cadou, 1 - pietre, 2 - copac, 3 - stalp. 
-
 Functia RenderObject deseneaza un obiect in functie de ID-ul dat, in punctul dat.
 
-Functia GenRandFloat genereaza un float aleator in intervalul [min, max];
+Functia GenObjectID genereaza un numar aleator intre 0 si 3, reprezentand ID-ul 
+unui obiect astfel: 0 - cadou, 1 - pietre, 2 - copac, 3 - stalp. 
 
 Functia GenSpawnPoint genereaza punctul in care se va instantia un obiect, 
 delimitat astfel incat sa se afle in afara viewport-ului, in functie de 
 pozitia curenta a jucatorului. 
+
+Functia GenRandFloat genereaza un float aleator in intervalul [min, max].
 
 Functia CheckCollision verifica existenta unei coliziuni intre jucator si 
 toate celelalte obiecte aflate pe teren, incadrand fiecare obiect intr-un 

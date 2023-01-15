@@ -315,13 +315,6 @@ void Tema3::RenderGift(glm::vec3 point)
 }
 
 
-int Tema3::GenObjectID()
-{
-    srand(time(0));
-    return (rand() % 4);
-}
-
-
 void Tema3::RenderObject(int ID, glm::vec3 point)
 {
     switch (ID) {
@@ -348,10 +341,10 @@ void Tema3::RenderObject(int ID, glm::vec3 point)
 }
 
 
-float Tema3::GenRandFloat(float min, float max)
+int Tema3::GenObjectID()
 {
     srand(time(0));
-    return (min + static_cast<float>(rand()) * static_cast<float>(max - min) / RAND_MAX);
+    return (rand() % 4);
 }
 
 
@@ -370,6 +363,13 @@ glm::vec3 Tema3::GenSpawnPoint()
     point.z = GenRandFloat(zMin, zMax);
 
     return point;
+}
+
+
+float Tema3::GenRandFloat(float min, float max)
+{
+    srand(time(0));
+    return (min + static_cast<float>(rand()) * static_cast<float>(max - min) / RAND_MAX);
 }
 
 
