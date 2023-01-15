@@ -50,18 +50,6 @@ corespunzator obiectului cu care s-a realizat coliziunea, in cazul unui
 cadou, pentru a-l putea sterge dupa coliziune, respectiv -1 in cazul unui 
 obstacol. 
 
-In cadrul functiei OnKeyPress se defineste functionalitatea ca, la apasarea 
-tastei "space", daca jocul s-a terminat (a existat o coliziune cu un obstacol),
-jocul sa se reseteze, resetand scorul si mutand jucatorul mai in fata pentru a 
-trece de obstacolul cu care s-a produs coliziunea. 
-
-In cadrul functiei OnMouseMove se preia directia pe ox ca fiind pozitia 
-coordonatei x a mouse-ului - jumatate din rezolutia curenta. In acest fel, 
-directia 0 va fi data de pozitia mouse-ului in mijlocul ecranului, iar 
-o directie negativa va fi data de o pozitie a mouse-ului in partea stanga 
-a ecranului, respectiv directie pozitiva - in partea dreapta. Unghiul 
-dat de aceasta directie se va calcula in functie de valoarea obtinuta. 
-
 Obiectele de pe plan (cadouri si obstacole) vor fi pastrate intr-o lista 
 cu elemente de tipul object, cu atributele ID - ce defineste ID-ul 
 obiectului, si point - ce defineste punctul in care acest obiect este 
@@ -79,3 +67,15 @@ adica obiectul cel mai departat. Se actualizeaza valorile cu care coordonatele
 de textura ale planului vor fi modificate, se seteaza pozitia camerei in 
 functie de jucator, si se deseneaza planul, jucatorul si toate obiectele 
 din lista obiectelor. 
+
+In cadrul functiei OnKeyPress se defineste functionalitatea ca, la apasarea 
+tastei "space", daca jocul s-a terminat (a existat o coliziune cu un obstacol),
+jocul sa se reseteze, resetand scorul si mutand jucatorul mai in fata pentru a 
+trece de obstacolul cu care s-a produs coliziunea. 
+
+In cadrul functiei OnMouseMove se preia directia pe ox ca fiind pozitia 
+coordonatei x a mouse-ului - jumatate din rezolutia curenta. In acest fel, 
+directia 0 va fi data de pozitia mouse-ului in mijlocul ecranului, iar 
+o directie negativa va fi data de o pozitie a mouse-ului in partea stanga 
+a ecranului, respectiv directie pozitiva - in partea dreapta. Unghiul 
+dat de aceasta directie se va calcula in functie de valoarea obtinuta. 

@@ -315,65 +315,6 @@ void Tema3::RenderGift(glm::vec3 point)
 }
 
 
-void Tema3::Update(float deltaTimeSeconds)
-{
-    currTime += deltaTimeSeconds; // se actualizeaza timpul
-
-    int ind;
-    collision = CheckCollision(ind); // se verifica existenta unei coliziuni
-
-    if (collision && ind == -1) { // colizune intre jucator si un obstacol
-        if (running) {
-            cout << "~~~~ Score = " << score << " ~~~~\n";
-        }
-        running = false;
-    } else {
-
-        if (collision) { // coliziune intre jucator si un cadou
-            objects.erase(objects.begin() + ind);
-            score++;
-        }
-
-        dirAngle = currAngle;
-
-        skierPosition.x += dir * 0.00005f;
-        skierPosition.z += speed * deltaTimeSeconds;
-
-        float frac = currTime - floor(currTime);
-
-        if ((frac >= 0.0000f && frac <= 0.0075f) || (frac >= 0.5000f && frac <= 0.5075f)) {
-            objects.push_back(object(GenObjectID(), GenSpawnPoint()));
-        }
-
-        if (objects.size() >= 15) {
-            objects.erase(objects.begin());
-        }
-
-    }
-
-    modifyTexture.x = skierPosition.x * 0.025f;
-    modifyTexture.y = skierPosition.z * 0.025f;
-
-    movementMatrix = glm::translate(glm::mat4(1), skierPosition);
-
-    /* Se pozitioneaza camera in functie de pozitia jucatorului pentru a il urmari
-    pe acesta constant */
-    glm::vec3 cameraPosition = rotationMatrix * glm::vec4(skierPosition, 1);
-    cameraPosition.y += 4;
-    cameraPosition.z += 7;
-
-    GetSceneCamera()->SetPosition(cameraPosition);
-
-    RenderSkiTrack();
-    RenderSkier();
-
-    for (int i = 0; i < objects.size(); i++) {
-        RenderObject(objects[i].ID, objects[i].point);
-    }
-
-}
-
-
 int Tema3::GenObjectID()
 {
     srand(time(0));
@@ -457,6 +398,65 @@ bool Tema3::CheckCollision(int& ind)
     }
 
     return false;
+}
+
+
+void Tema3::Update(float deltaTimeSeconds)
+{
+    currTime += deltaTimeSeconds; // se actualizeaza timpul
+
+    int ind;
+    collision = CheckCollision(ind); // se verifica existenta unei coliziuni
+
+    if (collision && ind == -1) { // colizune intre jucator si un obstacol
+        if (running) {
+            cout << "~~~~ Score = " << score << " ~~~~\n";
+        }
+        running = false;
+    } else {
+
+        if (collision) { // coliziune intre jucator si un cadou
+            objects.erase(objects.begin() + ind);
+            score++;
+        }
+
+        dirAngle = currAngle;
+
+        skierPosition.x += dir * 0.00005f;
+        skierPosition.z += speed * deltaTimeSeconds;
+
+        float frac = currTime - floor(currTime);
+
+        if ((frac >= 0.0000f && frac <= 0.0075f) || (frac >= 0.5000f && frac <= 0.5075f)) {
+            objects.push_back(object(GenObjectID(), GenSpawnPoint()));
+        }
+
+        if (objects.size() >= 15) {
+            objects.erase(objects.begin());
+        }
+
+    }
+
+    modifyTexture.x = skierPosition.x * 0.025f;
+    modifyTexture.y = skierPosition.z * 0.025f;
+
+    movementMatrix = glm::translate(glm::mat4(1), skierPosition);
+
+    /* Se pozitioneaza camera in functie de pozitia jucatorului pentru a il urmari
+    pe acesta constant */
+    glm::vec3 cameraPosition = rotationMatrix * glm::vec4(skierPosition, 1);
+    cameraPosition.y += 4;
+    cameraPosition.z += 7;
+
+    GetSceneCamera()->SetPosition(cameraPosition);
+
+    RenderSkiTrack();
+    RenderSkier();
+
+    for (int i = 0; i < objects.size(); i++) {
+        RenderObject(objects[i].ID, objects[i].point);
+    }
+
 }
 
 
