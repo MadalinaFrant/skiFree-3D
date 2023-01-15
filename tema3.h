@@ -46,15 +46,15 @@ namespace m1
 			void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
 			void OnWindowResize(int width, int height) override;
 
-			void DefTextures();
 			void DefMeshes();
+			void DefTextures();
 
 			void RenderSkier();
 			void RenderSkiTrack();
-			void RenderGift(glm::vec3 point);
 			void RenderRocks(glm::vec3 point);
 			void RenderTree(glm::vec3 point);
 			void RenderPole(glm::vec3 point);
+			void RenderGift(glm::vec3 point);
 
 			void RenderObject(int ID, glm::vec3 point);
 			int GenObjectID();
@@ -66,19 +66,15 @@ namespace m1
         	std::unordered_map<std::string, Texture2D*> mapTextures;
 
 			float speed, dir, dirAngle, currAngle;
-			
-			glm::vec3 skierPosition;
-
-			glm::vec2 modifyTexture;
-
 			glm::mat4 movementMatrix, rotationMatrix;
+			glm::vec3 skierPosition;
+			glm::vec2 modifyTexture;
 
 			vector<object> objects;
 
 			float currTime;
 
 			bool collision, running;
-
 			int score;
     };
 }

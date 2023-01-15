@@ -13,6 +13,37 @@ Tema3::~Tema3()
 {
 }
 
+
+/* Se definesc obiectele utilizate */
+void Tema3::DefMeshes()
+{
+    {
+        Mesh* mesh = new Mesh("plane");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "plane50.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
+
+    {
+        Mesh* mesh = new Mesh("box");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
+
+    {
+        Mesh* mesh = new Mesh("sphere");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
+
+    {
+        Mesh* mesh = new Mesh("cone");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "cone.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
+}
+
+
+/* Se definesc texturile utilizate */
 void Tema3::DefTextures()
 {
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, 
@@ -67,38 +98,11 @@ void Tema3::DefTextures()
     }
 }
 
-void Tema3::DefMeshes()
-{
-    {
-        Mesh* mesh = new Mesh("plane");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "plane50.obj");
-        meshes[mesh->GetMeshID()] = mesh;
-    }
-
-    {
-        Mesh* mesh = new Mesh("box");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
-        meshes[mesh->GetMeshID()] = mesh;
-    }
-
-    {
-        Mesh* mesh = new Mesh("sphere");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
-        meshes[mesh->GetMeshID()] = mesh;
-    }
-
-    {
-        Mesh* mesh = new Mesh("cone");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "cone.obj");
-        meshes[mesh->GetMeshID()] = mesh;
-    }
-}
-
 
 void Tema3::Init()
 {
-    DefTextures();
     DefMeshes();
+    DefTextures();
 
     {
         Shader *shader = new Shader("LabShader");
@@ -108,29 +112,25 @@ void Tema3::Init()
         shaders[shader->GetName()] = shader;
     }
 
-    speed = 5;
+    skierPosition = glm::vec3(0); // pozitia schiorului
 
-    skierPosition.x = 0;
-    skierPosition.y = 0;
-    skierPosition.z = 0;
+    modifyTexture = glm::vec2(0); // valoarea cu care se modifica coordonatele de texturare
 
-    modifyTexture.x = 0;
-    modifyTexture.y = 0;
+    speed = 5; // viteza de deplasare
+    dir = 0; // directia de deplasare (pe ox)
+    currAngle = 0; // unghiul dat de directia deplasarii
 
-    dir = 0;
+    currTime = 0; // timpul trecut de la inceputul jocului
 
-    GetSceneCamera()->RotateOX(-200);
+    running = true; // jocul ruleaza pana la o coliziune cu un obstacol
+    collision = false; // initial nu exista coliziune
+
+    score = 0;
 
     // unghi de inclinare al planului
     rotationMatrix = glm::rotate(glm::mat4(1), RADIANS(30.0f), glm::vec3(1, 0, 0));
 
-    currTime = 0;
-
-    collision = false;
-
-    score = 0;
-
-    running = true;
+    GetSceneCamera()->RotateOX(-200); // pozitionare estetica a camerei
 }
 
 
@@ -141,6 +141,47 @@ void Tema3::FrameStart()
 
     glm::ivec2 resolution = window->GetResolution();
     glViewport(0, 0, resolution.x, resolution.y);
+}
+
+
+void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, 
+                            Texture2D *texture)
+{
+    if (!mesh || !shader || !shader->GetProgramID())
+        return;
+
+    glUseProgram(shader->program);
+
+    GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
+    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
+    int loc_view_matrix = glGetUniformLocation(shader->program, "View");
+    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
+    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
+    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+    if (texture) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->program, "texture"), 0);
+    }
+
+    bool is_snow = false;
+    if (texture == mapTextures["snow"]) {
+        is_snow = true;
+    }
+
+    int is_snow_loc = glGetUniformLocation(shader->program, "isSnow");
+    glUniform1i(is_snow_loc, is_snow);
+
+    int loc_modif = glGetUniformLocation(shader->program, "textureModif");
+    glUniform2fv(loc_modif, 1, glm::value_ptr(modifyTexture));
+
+    glBindVertexArray(mesh->GetBuffers()->m_VAO);
+    glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
 }
 
 
@@ -185,16 +226,6 @@ void Tema3::RenderSkier()
         modelMatrix = glm::scale(modelMatrix, glm::vec3(0.15f, 0.15f, 1.5f));
         RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["gradient"]);
     }
-}
-
-
-void Tema3::RenderGift(glm::vec3 point) 
-{
-    glm::mat4 modelMatrix = glm::mat4(1);
-    modelMatrix *= rotationMatrix;
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 0.3f, point.z));
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.6f));
-    RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["gift"]);
 }
 
 
@@ -274,22 +305,31 @@ void Tema3::RenderPole(glm::vec3 point)
 }
 
 
+void Tema3::RenderGift(glm::vec3 point) 
+{
+    glm::mat4 modelMatrix = glm::mat4(1);
+    modelMatrix *= rotationMatrix;
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 0.3f, point.z));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.6f));
+    RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["gift"]);
+}
+
+
 void Tema3::Update(float deltaTimeSeconds)
 {
-
-    currTime += deltaTimeSeconds;
+    currTime += deltaTimeSeconds; // se actualizeaza timpul
 
     int ind;
-    collision = CheckCollision(ind);
+    collision = CheckCollision(ind); // se verifica existenta unei coliziuni
 
-    if (collision && ind == -1) {
+    if (collision && ind == -1) { // colizune intre jucator si un obstacol
         if (running) {
             cout << "~~~~ Score = " << score << " ~~~~\n";
         }
         running = false;
     } else {
 
-        if (collision) {
+        if (collision) { // coliziune intre jucator si un cadou
             objects.erase(objects.begin() + ind);
             score++;
         }
@@ -316,6 +356,8 @@ void Tema3::Update(float deltaTimeSeconds)
 
     movementMatrix = glm::translate(glm::mat4(1), skierPosition);
 
+    /* Se pozitioneaza camera in functie de pozitia jucatorului pentru a il urmari
+    pe acesta constant */
     glm::vec3 cameraPosition = rotationMatrix * glm::vec4(skierPosition, 1);
     cameraPosition.y += 4;
     cameraPosition.z += 7;
@@ -420,49 +462,6 @@ bool Tema3::CheckCollision(int& ind)
 
 void Tema3::FrameEnd()
 {
-    //DrawCoordinateSystem();
-}
-
-
-void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, 
-                            Texture2D *texture)
-{
-    if (!mesh || !shader || !shader->GetProgramID())
-        return;
-
-    glUseProgram(shader->program);
-
-    GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
-    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
-    int loc_view_matrix = glGetUniformLocation(shader->program, "View");
-    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-
-    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
-    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
-    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-
-    if (texture) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
-        glUniform1i(glGetUniformLocation(shader->program, "texture"), 0);
-    }
-
-    bool is_snow = false;
-
-    if (texture == mapTextures["snow"]) {
-        is_snow = true;
-    }
-
-    int is_snow_loc = glGetUniformLocation(shader->program, "isSnow");
-    glUniform1i(is_snow_loc, is_snow);
-
-    int loc_modif = glGetUniformLocation(shader->program, "texModif");
-    glUniform2fv(loc_modif, 1, glm::value_ptr(modifyTexture));
-
-    glBindVertexArray(mesh->GetBuffers()->m_VAO);
-    glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
 }
 
 
@@ -494,7 +493,6 @@ void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
     glm::ivec2 currResolution = window->GetResolution();
 
     dir = mouseX - currResolution.x / 2;
-
     currAngle = dir * 0.075f;
 }
 

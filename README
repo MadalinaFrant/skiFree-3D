@@ -1,0 +1,81 @@
+Tema 3 EGC - Frant Madalina 334CB
+
+Pentru rezolvarea acestei teme am folosit drept suport scheletul 
+laboratorului 9. 
+
+Fisierul header "tema3.h" defineste clasa Tema3 cu toate functiile si 
+variabilele necesare.
+
+In cadrul fisierului "tema3.cpp":
+
+In functia Init se definesc obiectele si texturile utiizate cu ajutorul 
+functiilor DefMeshes si DefTextures, shader-ul implementat si se initializeaza 
+valorile utilizate. 
+
+In functia FrameStart se seteaza culoarea fundalului corespunzatoare si se 
+seteaza viewport-ul.
+
+Functia RenderSimpleMesh trimite catre shader uniformele definite, unde se vor 
+realiza modificarile necesare asupra coordonatelor de textura pentru a crea 
+iluzia de miscare a terenului sub personaj.
+
+Functia RenderSkiTrack deseneaza planul, aplicand o textura de zapada asupra 
+acestuia, cu centrul in pozitia curenta a jucatorului, cu ajutorul matricei de 
+deplasare movementMatrix si il roteste cu 30 de grade prin matricea rotationMatrix.
+
+Functia RenderSkier deseneaza jucatorul definit de 3 mesh-uri texturate 
+corespunzator, aplicand pe langa deplasare si rotatie pentru inclinare 
+(prin movementMatrix si rotationMatrix) o rotatie in functie de unghiul 
+dat de directia de deplasare. 
+
+Functiile RenderRocks, RenderTree, RenderPole si RenderGift deseneaza obstacolele,
+respectiv cadourile texturate corespunzator, aplicand si rotatia in functie de 
+unghiul de inclinare prin rotationMatrix, in punctul dat. 
+
+Functia GenObjectID genereaza un numar aleator intre 0 si 3, reprezentand ID-ul 
+unui obiect astfel: 0 - cadou, 1 - pietre, 2 - copac, 3 - stalp. 
+
+Functia RenderObject deseneaza un obiect in functie de ID-ul dat, in punctul dat.
+
+Functia GenRandFloat genereaza un float aleator in intervalul [min, max];
+
+Functia GenSpawnPoint genereaza punctul in care se va instantia un obiect, 
+delimitat astfel incat sa se afle in afara viewport-ului, in functie de 
+pozitia curenta a jucatorului. 
+
+Functia CheckCollision verifica existenta unei coliziuni intre jucator si 
+toate celelalte obiecte aflate pe teren, incadrand fiecare obiect intr-un 
+obiect de coliziune AABB. Functia intoarce prin parametrul ind indicele 
+corespunzator obiectului cu care s-a realizat coliziunea, in cazul unui 
+cadou, pentru a-l putea sterge dupa coliziune, respectiv -1 in cazul unui 
+obstacol. 
+
+In cadrul functiei OnKeyPress se defineste functionalitatea ca, la apasarea 
+tastei "space", daca jocul s-a terminat (a existat o coliziune cu un obstacol),
+jocul sa se reseteze, resetand scorul si mutand jucatorul mai in fata pentru a 
+trece de obstacolul cu care s-a produs coliziunea. 
+
+In cadrul functiei OnMouseMove se preia directia pe ox ca fiind pozitia 
+coordonatei x a mouse-ului - jumatate din rezolutia curenta. In acest fel, 
+directia 0 va fi data de pozitia mouse-ului in mijlocul ecranului, iar 
+o directie negativa va fi data de o pozitie a mouse-ului in partea stanga 
+a ecranului, respectiv directie pozitiva - in partea dreapta. Unghiul 
+dat de aceasta directie se va calcula in functie de valoarea obtinuta. 
+
+Obiectele de pe plan (cadouri si obstacole) vor fi pastrate intr-o lista 
+cu elemente de tipul object, cu atributele ID - ce defineste ID-ul 
+obiectului, si point - ce defineste punctul in care acest obiect este 
+pozitionat. 
+
+In cadrul functiei Update se incrementeaza timpul si se verifica existenta 
+unei coliziuni. Daca a fost gasita o coliziune intre jucator si un obstacol, 
+se va afisa scorul si jocul se va opri, jucatorul ramanand in punctul in 
+care s-a produs coliziunea, pana la o eventuala resetare. In cazul unei 
+coliziuni cu un cadou acesta se va sterge din lista obiectelor de pe plan, 
+incrementand scorul. Se calculeaza noua pozitie a jucatorului dupa miscare, 
+si se adauga un nou obiect in lista obiectelor la fiecare jumatate de secunda.
+Daca lista a depasit 15 elemente, se va sterge primul element al acesteia, 
+adica obiectul cel mai departat. Se actualizeaza valorile cu care coordonatele 
+de textura ale planului vor fi modificate, se seteaza pozitia camerei in 
+functie de jucator, si se deseneaza planul, jucatorul si toate obiectele 
+din lista obiectelor. 

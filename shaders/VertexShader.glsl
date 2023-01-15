@@ -9,11 +9,12 @@ uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Projection;
 
-out vec2 texcoord;
+out vec2 texcoord; // output catre fragment shader
 
 
 void main()
 {
+    // trimite coordonatele de texturare catre fragment shader 
     texcoord = v_texture_coord;
 
     gl_Position = Projection * View * Model * vec4(v_position, 1.0);
