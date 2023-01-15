@@ -1,9 +1,5 @@
 #include "lab_m1/tema3/tema3.h"
 
-#include <vector>
-#include <string>
-#include <iostream>
-
 using namespace std;
 using namespace m1;
 
@@ -17,10 +13,10 @@ Tema3::~Tema3()
 {
 }
 
-
-void Tema3::Init()
+void Tema3::DefTextures()
 {
-    const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "textures");
+    const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, 
+                                            "tema3", "textures");
 
     {
         Texture2D* texture = new Texture2D();
@@ -30,8 +26,8 @@ void Tema3::Init()
 
     {
         Texture2D* texture = new Texture2D();
-        texture->Load2D(PATH_JOIN(sourceTextureDir, "skier.png").c_str(), GL_REPEAT);
-        mapTextures["skier"] = texture;
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "blue_pattern.png").c_str(), GL_REPEAT);
+        mapTextures["blue_pattern"] = texture;
     }
 
     {
@@ -46,7 +42,33 @@ void Tema3::Init()
         mapTextures["gift"] = texture;
     }
 
+    {
+        Texture2D* texture = new Texture2D();
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "rock.jpg").c_str(), GL_REPEAT);
+        mapTextures["rock"] = texture;
+    }
 
+    {
+        Texture2D* texture = new Texture2D();
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "wood.jpeg").c_str(), GL_REPEAT);
+        mapTextures["wood"] = texture;
+    }
+
+    {
+        Texture2D* texture = new Texture2D();
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "pines.jpg").c_str(), GL_REPEAT);
+        mapTextures["pines"] = texture;
+    }
+
+    {
+        Texture2D* texture = new Texture2D();
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "concrete.jpg").c_str(), GL_REPEAT);
+        mapTextures["concrete"] = texture;
+    }
+}
+
+void Tema3::DefMeshes()
+{
     {
         Mesh* mesh = new Mesh("plane");
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "plane50.obj");
@@ -70,6 +92,13 @@ void Tema3::Init()
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "cone.obj");
         meshes[mesh->GetMeshID()] = mesh;
     }
+}
+
+
+void Tema3::Init()
+{
+    DefTextures();
+    DefMeshes();
 
     {
         Shader *shader = new Shader("LabShader");
@@ -81,16 +110,27 @@ void Tema3::Init()
 
     speed = 5;
 
-    movement.x = 0;
-    movement.y = 0;
-    movement.z = 0;
+    skierPosition.x = 0;
+    skierPosition.y = 0;
+    skierPosition.z = 0;
 
-    modifTex.x = 0;
-    modifTex.y = 0;
+    modifyTexture.x = 0;
+    modifyTexture.y = 0;
 
     dir = 0;
 
     GetSceneCamera()->RotateOX(-200);
+
+    // unghi de inclinare al planului
+    rotationMatrix = glm::rotate(glm::mat4(1), RADIANS(30.0f), glm::vec3(1, 0, 0));
+
+    currTime = 0;
+
+    collision = false;
+
+    score = 0;
+
+    running = true;
 }
 
 
@@ -104,32 +144,18 @@ void Tema3::FrameStart()
 }
 
 
-void Tema3::Update(float deltaTimeSeconds)
+void Tema3::RenderSkiTrack()
 {
-    movement.x += dir * 0.00005f;
-    movement.z += speed * deltaTimeSeconds;
+    glm::mat4 modelMatrix = glm::mat4(1);
+    modelMatrix *= rotationMatrix;
+    modelMatrix *= movementMatrix;
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
+    RenderSimpleMesh(meshes["plane"], shaders["LabShader"], modelMatrix, mapTextures["snow"]);
+}
 
-    modifTex.x = movement.x * 0.025f;
-    modifTex.y = movement.z * 0.025f;
 
-    glm::mat4 movementMatrix = glm::translate(glm::mat4(1), movement);
-
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1), RADIANS(30.0f), glm::vec3(1, 0, 0));
-
-    glm::vec3 cPos = rotationMatrix * glm::vec4(movement, 1);
-    cPos.y += 5;
-    cPos.z += 7;
-
-    GetSceneCamera()->SetPosition(cPos);
-
-    {
-        glm::mat4 modelMatrix = glm::mat4(1);
-        modelMatrix *= rotationMatrix;
-        modelMatrix *= movementMatrix;
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
-        RenderSimpleMesh(meshes["plane"], shaders["LabShader"], modelMatrix, mapTextures["snow"]);
-    }
-
+void Tema3::RenderSkier()
+{
     {
         glm::mat4 modelMatrix = glm::mat4(1);
         modelMatrix *= rotationMatrix;
@@ -137,7 +163,7 @@ void Tema3::Update(float deltaTimeSeconds)
         modelMatrix = glm::rotate(modelMatrix, RADIANS(dirAngle), glm::vec3(0, 1, 0));
         modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 0.15f + 0.25f, 0));
         modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
-        RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["skier"]);
+        RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["blue_pattern"]);
     }
 
     {
@@ -159,15 +185,236 @@ void Tema3::Update(float deltaTimeSeconds)
         modelMatrix = glm::scale(modelMatrix, glm::vec3(0.15f, 0.15f, 1.5f));
         RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["gradient"]);
     }
+}
+
+
+void Tema3::RenderGift(glm::vec3 point) 
+{
+    glm::mat4 modelMatrix = glm::mat4(1);
+    modelMatrix *= rotationMatrix;
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 0.3f, point.z));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.6f));
+    RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["gift"]);
+}
+
+
+void Tema3::RenderRocks(glm::vec3 point)
+{
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x - 0.5f, point.y + 0.25f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
+        RenderSimpleMesh(meshes["sphere"], shaders["LabShader"], modelMatrix, mapTextures["rock"]);
+    }
 
     {
         glm::mat4 modelMatrix = glm::mat4(1);
         modelMatrix *= rotationMatrix;
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(2, 0.25f, 10));
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
-        RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["gift"]);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 0.35f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.7f));
+        RenderSimpleMesh(meshes["sphere"], shaders["LabShader"], modelMatrix, mapTextures["rock"]);
     }
 
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x + 0.5f, point.y + 0.15f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.3f));
+        RenderSimpleMesh(meshes["sphere"], shaders["LabShader"], modelMatrix, mapTextures["rock"]);
+    }
+}
+
+
+void Tema3::RenderTree(glm::vec3 point)
+{
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 0.625f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.25f, 1.25f, 0.25f));
+        RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["wood"]);
+    }
+
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 1.25f + 0.65f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f, 0.65f, 0.5f));
+        RenderSimpleMesh(meshes["cone"], shaders["LabShader"], modelMatrix, mapTextures["pines"]);
+    }
+
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 1.25f + 0.65f * 2, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.35f, 0.5f, 0.35f));
+        RenderSimpleMesh(meshes["cone"], shaders["LabShader"], modelMatrix, mapTextures["pines"]);
+    }
+}
+
+
+void Tema3::RenderPole(glm::vec3 point)
+{
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 1.5f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f, 3, 0.1f));
+        RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["concrete"]);
+    }
+
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix *= rotationMatrix;
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(point.x, point.y + 3 + 0.05f, point.z));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(1.25f, 0.1f, 0.1f));
+        RenderSimpleMesh(meshes["box"], shaders["LabShader"], modelMatrix, mapTextures["concrete"]);
+    }
+}
+
+
+void Tema3::Update(float deltaTimeSeconds)
+{
+
+    currTime += deltaTimeSeconds;
+
+    int ind;
+    collision = CheckCollision(ind);
+
+    if (collision && ind == -1) {
+        if (running) {
+            cout << "~~~~ Score = " << score << " ~~~~\n";
+        }
+        running = false;
+    } else {
+
+        if (collision) {
+            objects.erase(objects.begin() + ind);
+            score++;
+        }
+
+        dirAngle = currAngle;
+
+        skierPosition.x += dir * 0.00005f;
+        skierPosition.z += speed * deltaTimeSeconds;
+
+        float frac = currTime - floor(currTime);
+
+        if ((frac >= 0.0000f && frac <= 0.0075f) || (frac >= 0.5000f && frac <= 0.5075f)) {
+            objects.push_back(object(GenObjectID(), GenSpawnPoint()));
+        }
+
+        if (objects.size() >= 15) {
+            objects.erase(objects.begin());
+        }
+
+    }
+
+    modifyTexture.x = skierPosition.x * 0.025f;
+    modifyTexture.y = skierPosition.z * 0.025f;
+
+    movementMatrix = glm::translate(glm::mat4(1), skierPosition);
+
+    glm::vec3 cameraPosition = rotationMatrix * glm::vec4(skierPosition, 1);
+    cameraPosition.y += 4;
+    cameraPosition.z += 7;
+
+    GetSceneCamera()->SetPosition(cameraPosition);
+
+    RenderSkiTrack();
+    RenderSkier();
+
+    for (int i = 0; i < objects.size(); i++) {
+        RenderObject(objects[i].ID, objects[i].point);
+    }
+
+}
+
+
+int Tema3::GenObjectID()
+{
+    srand(time(0));
+    return (rand() % 4);
+}
+
+
+void Tema3::RenderObject(int ID, glm::vec3 point)
+{
+    switch (ID) {
+        case 0:
+            RenderGift(point);
+            break;
+
+        case 1:
+            RenderRocks(point);
+            break;
+
+        case 2:
+            RenderTree(point);
+            break;
+
+        case 3:
+            RenderPole(point);
+            break;
+        
+        default:
+            break;
+    }
+
+}
+
+
+float Tema3::GenRandFloat(float min, float max)
+{
+    srand(time(0));
+    return (min + static_cast<float>(rand()) * static_cast<float>(max - min) / RAND_MAX);
+}
+
+
+glm::vec3 Tema3::GenSpawnPoint()
+{
+    srand(time(0));
+
+    float xMin = skierPosition.x - 7;
+    float xMax = skierPosition.x + 7;
+    float zMin = skierPosition.z + 5;
+    float zMax = skierPosition.z + 10;
+
+    glm::vec3 point = glm::vec3(0);
+
+    point.x = GenRandFloat(xMin, xMax);
+    point.z = GenRandFloat(zMin, zMax);
+
+    return point;
+}
+
+
+bool Tema3::CheckCollision(int& ind)
+{
+    glm::vec3 skierPos = skierPosition;
+
+    for (int i = 0; i < objects.size(); i++) {
+
+        glm::vec3 objPos = objects[i].point;
+
+        bool collision_x = skierPos.x + 0.75f >= objPos.x && objPos.x + 0.75f >= skierPos.x;
+        bool collision_y = skierPos.z + 0.75f >= objPos.z && objPos.z + 0.75f >= skierPos.z;
+
+        if (collision_x && collision_y) {
+
+            if (objects[i].ID == 0) {
+                ind = i;
+            } else {
+                ind = -1;
+            }
+
+            return true;
+        }
+
+    }
+
+    return false;
 }
 
 
@@ -212,7 +459,7 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
     glUniform1i(is_snow_loc, is_snow);
 
     int loc_modif = glGetUniformLocation(shader->program, "texModif");
-    glUniform2fv(loc_modif, 1, glm::value_ptr(modifTex));
+    glUniform2fv(loc_modif, 1, glm::value_ptr(modifyTexture));
 
     glBindVertexArray(mesh->GetBuffers()->m_VAO);
     glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
@@ -226,6 +473,14 @@ void Tema3::OnInputUpdate(float deltaTime, int mods)
 
 void Tema3::OnKeyPress(int key, int mods)
 {
+
+    if (key == GLFW_KEY_SPACE && running == false) {
+        running = true;
+        collision = false;
+        score = 0;
+        skierPosition.z += 2;
+    }
+
 }
 
 
@@ -240,7 +495,7 @@ void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
 
     dir = mouseX - currResolution.x / 2;
 
-    dirAngle = dir * 0.075f;
+    currAngle = dir * 0.075f;
 }
 
 

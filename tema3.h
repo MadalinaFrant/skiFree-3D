@@ -1,10 +1,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <unordered_map>
+#include <iostream>
 
 #include "components/simple_scene.h"
 #include "components/transform.h"
+
+using namespace std;
 
 
 namespace m1
@@ -12,6 +16,14 @@ namespace m1
     class Tema3 : public gfxc::SimpleScene
     {
     	public:
+
+			struct object {
+				object(int ID, glm::vec3 point): ID(ID), point(point) {}
+
+				int ID;
+				glm::vec3 point;
+			};
+
         	Tema3();
         	~Tema3();
 
@@ -34,12 +46,39 @@ namespace m1
 			void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
 			void OnWindowResize(int width, int height) override;
 
+			void DefTextures();
+			void DefMeshes();
+
+			void RenderSkier();
+			void RenderSkiTrack();
+			void RenderGift(glm::vec3 point);
+			void RenderRocks(glm::vec3 point);
+			void RenderTree(glm::vec3 point);
+			void RenderPole(glm::vec3 point);
+
+			void RenderObject(int ID, glm::vec3 point);
+			int GenObjectID();
+			glm::vec3 GenSpawnPoint();
+			float GenRandFloat(float min, float max);
+
+			bool CheckCollision(int& i);
+
         	std::unordered_map<std::string, Texture2D*> mapTextures;
 
-			float speed, dir, dirAngle;
+			float speed, dir, dirAngle, currAngle;
 			
-			glm::vec3 movement;
+			glm::vec3 skierPosition;
 
-			glm::vec2 modifTex;
+			glm::vec2 modifyTexture;
+
+			glm::mat4 movementMatrix, rotationMatrix;
+
+			vector<object> objects;
+
+			float currTime;
+
+			bool collision, running;
+
+			int score;
     };
 }
