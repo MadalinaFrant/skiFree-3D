@@ -437,8 +437,8 @@ void Tema3::Update(float deltaTimeSeconds)
 
     }
 
-    modifyTexture.x = skierPosition.x * 0.025f;
-    modifyTexture.y = skierPosition.z * 0.025f;
+    modifyTexture.x = skierPosition.x * 0.04f;
+    modifyTexture.y = skierPosition.z * 0.04f;
 
     movementMatrix = glm::translate(glm::mat4(1), skierPosition);
 
